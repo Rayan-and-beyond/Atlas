@@ -80,3 +80,23 @@ def test_search_rejects_missing_pattern_and_directory(tmp_path) -> None:
     assert "pattern required" in tool.execute(action="search", path=str(tmp_path)).lower()
     missing = tool.execute(action="search", path=str(tmp_path / "missing"), pattern="*.txt")
     assert "directory not found" in missing.lower()
+
+
+def test_list_empty_directory(tmp_path) -> None:
+    out = FileTool().execute(action="list", path=str(tmp_path))
+    assert "empty" in out.lower()
+
+
+def test_append_creates_parent_directory(tmp_path) -> None:
+    p = tmp_path / "nested" / "a.txt"
+    out = FileTool().execute(action="append", path=str(p), content="hello")
+    assert "appended" in out.lower()
+    assert p.read_text(encoding="utf-8") == "hello"
+
+
+def test_search_non_recursive_does_not_escape_temp_directory(tmp_path) -> None:
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    (nested / "secret.txt").write_text("secret", encoding="utf-8")
+    out = FileTool().execute(action="search", path=str(tmp_path), pattern="*.txt")
+    assert "secret.txt" not in out
